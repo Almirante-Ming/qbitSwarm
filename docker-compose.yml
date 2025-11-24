@@ -1,103 +1,135 @@
-version: '3.9'
+version: "3.8"
 
 services:
-  # O Seeder também será o Tracker
-  seeder-tracker:
-    image: lscr.io/linuxserver/qbittorrent:latest
-    container_name: torrent-seeder-tracker
-    networks:
-      - torrent-net
+  tracker:
+    image: linuxserver/transmission
+    container_name: tracker
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=America/Sao_Paulo
-    ports:
-      - "8080:8080"    # WebUI do Seeder
-      - "9000:9000"    # Porta do Tracker
-      - "6881:6881/tcp" # Porta P2P do Seeder
-      - "6881:6881/udp" # Porta P2P do Seeder
+      - TZ=Etc/UTC
+      - TRANSMISSION_ENABLE_TRACKER=true
     volumes:
-      - ./seeder-config/qbittorrent:/config/qBittorrent
-      - ./seeder-data:/downloads  # <-- PASTA DO SEU PC
-    deploy:
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: '500M'
+      - ./tracker/config:/config
+      - ./tracker/downloads:/downloads
+    ports:
+      - "6969:6969/udp"
+      - "6969:6969/tcp"
+      - "9090:9091"
+    networks:
+      - torrent_net
 
-  # Cliente 1
+
+  peer1:
+    image: linuxserver/transmission
+    container_name: peer1
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - TRANSMISSION_DHT_ENABLED=true
+      - TRANSMISSION_PEX_ENABLED=true
+      - TRANSMISSION_LPD_ENABLED=true
+    volumes:
+      - ./peer1/config:/config
+      - ./peer1/downloads:/downloads
+    ports:
+      - "9091:9091"
+      - "51411:51413/tcp"
+      - "51411:51413/udp"
+    networks:
+      - torrent_net
+    depends_on:
+      - tracker
+
+  peer2:
+    image: linuxserver/transmission
+    container_name: peer2
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - TRANSMISSION_DHT_ENABLED=true
+      - TRANSMISSION_PEX_ENABLED=true
+      - TRANSMISSION_LPD_ENABLED=true
+    volumes:
+      - ./peer2/config:/config
+      - ./peer2/downloads:/downloads
+    ports:
+      - "9092:9091"
+      - "51412:51413/tcp"
+      - "51412:51413/udp"
+    networks:
+      - torrent_net
+    depends_on:
+      - tracker
+
   leecher1:
-    image: lscr.io/linuxserver/qbittorrent:latest
-    container_name: torrent-leecher1
-    networks:
-      - torrent-net
+    image: linuxserver/transmission
+    container_name: leecher1
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=America/Sao_Paulo
-    ports:
-      - "8081:8080"
-      - "6882:6882/tcp"
-      - "6882:6882/udp"
+      - TZ=Etc/UTC
+      - TRANSMISSION_DHT_ENABLED=true
+      - TRANSMISSION_PEX_ENABLED=true
+      - TRANSMISSION_LPD_ENABLED=true
     volumes:
-      - ./leecher1-config/qbittorrent:/config/qBittorrent
-      - ./leecher-data:/downloads
-    deploy:
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: '500M'
+      - ./leecher1/config:/config
+      - ./leecher1/downloads:/downloads
+    ports:
+      - "9093:9091"
+      - "51413:51413/tcp"
+      - "51413:51413/udp"
+    networks:
+      - torrent_net
     depends_on:
-      - seeder-tracker
+      - tracker
 
-  # Cliente 2
   leecher2:
-    image: lscr.io/linuxserver/qbittorrent:latest
-    container_name: torrent-leecher2
-    networks:
-      - torrent-net
+    image: linuxserver/transmission
+    container_name: leecher2
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=America/Sao_Paulo
-    ports:
-      - "8082:8080"
-      - "6883:6883/tcp"
+      - TZ=Etc/UTC
+      - TRANSMISSION_DHT_ENABLED=true
+      - TRANSMISSION_PEX_ENABLED=true
+      - TRANSMISSION_LPD_ENABLED=true
     volumes:
-      - ./leecher2-config/qbittorrent:/config/qBittorrent
-      - ./leecher-data:/downloads
-    deploy:
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: '500M'
+      - ./leecher2/config:/config
+      - ./leecher2/downloads:/downloads
+    ports:
+      - "9094:9091"
+      - "51414:51413/tcp"
+      - "51414:51413/udp"
+    networks:
+      - torrent_net
     depends_on:
-      - seeder-tracker
-# # Cliente 3
-#   leecher3:
-#     image: lscr.io/linuxserver/qbittorrent:latest
-#     container_name: torrent-leecher3
-#     networks:
-#       - torrent-net
-#     environment:
-#       - PUID=1000
-#       - PGID=1000
-#       - TZ=America/Sao_Paulo
-#     ports:
-#       - "8082:8080" 
-#       - "6884:6884/tcp"
-#       - "6884:6884/udp"
-#     volumes:
-#       - ./leecher3-config/qbittorrent:/config/qBittorrent
-#       - ./leecher-data:/downloads
-#     deploy:
-#       resources:
-#         limits:
-#           cpus: '1.5'
-#           memory: '500M'
-#     depends_on:
-#       - seeder-tracker
+      - tracker
 
-# networks:
-#   torrent-net:
-#     driver: bridge
+  peer_leecher:
+    image: linuxserver/transmission
+    container_name: peer_leecher
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - TRANSMISSION_DHT_ENABLED=true
+      - TRANSMISSION_PEX_ENABLED=true
+      - TRANSMISSION_LPD_ENABLED=true
+    volumes:
+      - ./peer_leecher/config:/config
+      - ./peer_leecher/downloads:/downloads
+    ports:
+      - "9095:9091"
+      - "51415:51413/tcp"
+      - "51415:51413/udp"
+    networks:
+      - torrent_net
+    depends_on:
+      - tracker
+
+networks:
+  torrent_net:
+    driver: bridge
