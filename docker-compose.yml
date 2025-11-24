@@ -1,68 +1,24 @@
 version: "3.8"
 
 services:
-  tracker:
+  peer:
     image: linuxserver/transmission
-    container_name: tracker
+    container_name: peer
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - TRANSMISSION_ENABLE_TRACKER=true
+      - TRANSMISSION_DHT_ENABLED=false 
     volumes:
-      - ./tracker/config:/config
-      - ./tracker/downloads:/downloads
-    ports:
-      - "6969:6969/udp"
-      - "6969:6969/tcp"
-      - "9090:9091"
-    networks:
-      - torrent_net
-
-
-  peer1:
-    image: linuxserver/transmission
-    container_name: peer1
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - TRANSMISSION_DHT_ENABLED=true
-      - TRANSMISSION_PEX_ENABLED=true
-      - TRANSMISSION_LPD_ENABLED=true
-    volumes:
-      - ./peer1/config:/config
-      - ./peer1/downloads:/downloads
+      - ./peer/config:/config
+      - ./peer/downloads:/downloads
+      - ./peer/watch:/watch
     ports:
       - "9091:9091"
       - "51411:51413/tcp"
       - "51411:51413/udp"
     networks:
       - torrent_net
-    depends_on:
-      - tracker
-
-  peer2:
-    image: linuxserver/transmission
-    container_name: peer2
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - TRANSMISSION_DHT_ENABLED=true
-      - TRANSMISSION_PEX_ENABLED=true
-      - TRANSMISSION_LPD_ENABLED=true
-    volumes:
-      - ./peer2/config:/config
-      - ./peer2/downloads:/downloads
-    ports:
-      - "9092:9091"
-      - "51412:51413/tcp"
-      - "51412:51413/udp"
-    networks:
-      - torrent_net
-    depends_on:
-      - tracker
 
   leecher1:
     image: linuxserver/transmission
@@ -72,19 +28,16 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
       - TRANSMISSION_DHT_ENABLED=true
-      - TRANSMISSION_PEX_ENABLED=true
-      - TRANSMISSION_LPD_ENABLED=true
     volumes:
       - ./leecher1/config:/config
       - ./leecher1/downloads:/downloads
+      - ./leecher1/watch:/watch
     ports:
-      - "9093:9091"
-      - "51413:51413/tcp"
-      - "51413:51413/udp"
+      - "9092:9091"
+      - "51412:51413/tcp"
+      - "51412:51413/udp"
     networks:
       - torrent_net
-    depends_on:
-      - tracker
 
   leecher2:
     image: linuxserver/transmission
@@ -94,41 +47,44 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
       - TRANSMISSION_DHT_ENABLED=true
-      - TRANSMISSION_PEX_ENABLED=true
-      - TRANSMISSION_LPD_ENABLED=true
     volumes:
       - ./leecher2/config:/config
       - ./leecher2/downloads:/downloads
+      - ./leecher2/watch:/watch
+    ports:
+      - "9093:9091"
+      - "51413:51413/tcp"
+      - "51413:51413/udp"
+    networks:
+      - torrent_net
+
+  leecher3:
+    image: linuxserver/transmission
+    container_name: leecher3
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - TRANSMISSION_DHT_ENABLED=true
+    volumes:
+      - ./leecher3/config:/config
+      - ./leecher3/downloads:/downloads
+      - ./leecher3/watch:/watch
     ports:
       - "9094:9091"
       - "51414:51413/tcp"
       - "51414:51413/udp"
     networks:
       - torrent_net
-    depends_on:
-      - tracker
 
-  peer_leecher:
-    image: linuxserver/transmission
-    container_name: peer_leecher
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - TRANSMISSION_DHT_ENABLED=true
-      - TRANSMISSION_PEX_ENABLED=true
-      - TRANSMISSION_LPD_ENABLED=true
-    volumes:
-      - ./peer_leecher/config:/config
-      - ./peer_leecher/downloads:/downloads
-    ports:
-      - "9095:9091"
-      - "51415:51413/tcp"
-      - "51415:51413/udp"
+  monitor:
+    image: debian:stable-slim
+    container_name: monitor
     networks:
       - torrent_net
-    depends_on:
-      - tracker
+    tty: true
+    stdin_open: true
+    command: bash -c "apt-get update && apt-get install -y tcpdump tmux && bash"
 
 networks:
   torrent_net:

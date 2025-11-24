@@ -1,72 +1,84 @@
+# primeiramente a criacao e permissao das pastas:
 
--Tracker (porta UDP 6969)
+# linux:
+    mkdir -p peer/{config,downloads/{complete,incomplete},watch}
+    mkdir -p leecher1/{config,downloads/{complete,incomplete},watch}
+    mkdir -p leecher2/{config,downloads/{complete,incomplete},watch}
+    mkdir -p leecher3/{config,downloads/{complete,incomplete},watch}
 
--Capturar com: tcpdump -i eth0 udp port 6969
+    sudo chown -R 1000:1000 peer leecher1 leecher2 leecher3
+    sudo chmod -R 755 peer leecher1 leecher2 leecher3
 
-Mostra anúncios e respostas de peers.
+# Windows: 
+    New-Item -ItemType Directory -Force -Path .\peer\config
+    New-Item -ItemType Directory -Force -Path .\peer\downloads\complete
+    New-Item -ItemType Directory -Force -Path .\peer\downloads\incomplete
+    New-Item -ItemType Directory -Force -Path .\peer\watch
 
-DHT (porta UDP 6881)
+    foreach ($leecher in "leecher1","leecher2","leecher3") {
+        New-Item -ItemType Directory -Force -Path ".\$leecher\config"
+        New-Item -ItemType Directory -Force -Path ".\$leecher\downloads\complete"
+        New-Item -ItemType Directory -Force -Path ".\$leecher\downloads\incomplete"
+        New-Item -ItemType Directory -Force -Path ".\$leecher\watch"
+    }
 
-Capturar com: tcpdump -i eth0 udp port 6881
+## criacao dos containers:
 
-Mostra mensagens ping, find_node, get_peers, announce_peer.
+    1. Introdução
+    Breve explicação do que é BitTorrent (rede P2P para compartilhamento de arquivos).
 
-- Peers/Leechers (porta TCP/UDP 51413)
+    Diferença entre seeder e leecher.
 
-Capturar com: tcpdump -i eth0 tcp port 51413
+    Papel do tracker (coordena peers) e do DHT (descoberta distribuída).
 
-Mostra conexões diretas e troca de pedaços.
+    2. Configuração inicial
+    Mostrar a estrutura de containers: 1 peer + 3 leechers.
 
+    Explicar que o qBittorrent local está atuando como tracker.
 
-1- Suba os containers (tracker, peers, leechers).
+    Destacar que o peer começa com DHT desabilitado.
 
-2- Inicie o torrent público em todos os peers/leechers.
+    3. Criação do torrent
+    Criar o .torrent no qBittorrent com o tracker HTTP:
 
-3- Abra tcpdump/wireshark em cada container:
+    4. Fase 1 – Tracker ativo
+    Peer sem DHT consegue baixar porque o tracker informa os seeders.
 
-4- No tracker → veja pacotes UDP 6969.
+    Leechers começam a baixar e, ao completar, viram seeders também.
 
-5- Nos peers → veja pacotes UDP 6881 (DHT) e TCP 51413 (P2P).
+    Mostrar no monitor/logs os pacotes announce e scrape.
 
-6- Derrube o tracker → os pacotes DHT continuam circulando.
+    5. Fase 2 – Derrubar o tracker
+    Desativar o tracker no qBittorrent.
 
-7- Derrube um peer → os outros ainda trocam pedaços via DHT.
+    Peer sem DHT não encontra mais seeders → download para.
 
+    Leechers com DHT ativo continuam trocando pacotes entre si.
 
-Tracker: central inicial de descoberta.
+    Mostrar no monitor/logs mensagens get_peers e announce_peer.
 
-DHT: rede distribuída que mantém a lista de peers.
+    6. Fase 3 – Peer com DHT ativo
+    Reiniciar o peer com TRANSMISSION_DHT_ENABLED=true.
 
-P2P: conexões diretas para troca de pedaços.
+    Agora ele participa da rede distribuída e encontra seeders via DHT.
 
+    Mesmo sem tracker, o download continua.
 
+    Mostrar no monitor/logs que o peer passa a enviar/receber mensagens DHT.
 
-                ┌───────────────┐
-                │   Tracker      │
-                │ UDP 6969       │
-                └───────▲───────┘
-                        │
-                        │ (Anúncios / respostas de peers)
-                        │
- ┌───────────────┐       │       ┌───────────────┐
- │    Peer1       │◄─────┼─────►│    Peer2       │
- │ TCP/UDP 51413  │               │ TCP/UDP 51413 │
- │ UDP 6881 (DHT) │               │ UDP 6881 (DHT)│
- └───────▲────────┘               └───────▲───────┘
-         │                                │
-         │                                │
-         │                                │
-  ┌───────────────┐               ┌───────────────┐
-│   Leecher1     │◄─────────────►│   Leecher2    │
- │ TCP/UDP 51413  │               │ TCP/UDP 51413 │
- │ UDP 6881 (DHT) │               │ UDP 6881 (DHT)│
- └───────▲────────┘               └───────▲───────┘
-         │                                │
-         │                                │
-         └───────────────┐ ┌──────────────┘
-                         ▼ ▼
-                  ┌───────────────┐
-                  │ Peer+Leecher  │
-                  │ TCP/UDP 51413 │
-                  │ UDP 6881 (DHT)│
-                  └───────────────┘
+    7. Conclusão
+    Tracker = ponto central de coordenação, mas dependente.
+
+    DHT = rede distribuída, resiliente mesmo sem tracker.
+
+    Demonstração prática da transição de centralizado → distribuído.
+
+    Destacar que leechers viram seeders, aumentando a robustez da rede.
+
+    Use logs separados por container para mostrar o tráfego em tempo real.
+
+    Mostre a aba “Trackers” no Transmission para evidenciar status “Working” ou “Not Working”.
+
+    Faça pausas entre fases para explicar o que está acontecendo.
+
+    Termine reforçando a importância da DHT para a resiliência da rede.
