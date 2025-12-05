@@ -1,84 +1,123 @@
-# primeiramente a criacao e permissao das pastas:
+# Observacoes
+ irei incluir o arquivo utilizado para exibir e configurar a rede, tambem esta incluso o html q utilizei para servir a pagina com as senhas dos container, para fins de teste, tambem estou deixando o arquivo de exemplo embora ele nao ira funcionar, pois se trata de um arquivo privado da minha maquina, apontando para o meu ip, sendo assim, recomento criar outro atraves de um programa adequado, seja qbit ou transmission
 
-# linux:
-    mkdir -p peer/{config,downloads/{complete,incomplete},watch}
-    mkdir -p leecher1/{config,downloads/{complete,incomplete},watch}
-    mkdir -p leecher2/{config,downloads/{complete,incomplete},watch}
-    mkdir -p leecher3/{config,downloads/{complete,incomplete},watch}
+ tambem esta incluso o pdf com o material que compilamos para apresentar no dia 3/12, o mesmo esta com a data de hoje, pois quando criei o arquivo latex de base, havia definido que a data exibida era o dia atual, no momento da compilacao ele ira gerar com a data do dia, no caso 5/12.
 
-    sudo chown -R 1000:1000 peer leecher1 leecher2 leecher3
-    sudo chmod -R 755 peer leecher1 leecher2 leecher3
+## Pré-requisitos
 
-# Windows: 
-    New-Item -ItemType Directory -Force -Path .\peer\config
-    New-Item -ItemType Directory -Force -Path .\peer\downloads\complete
-    New-Item -ItemType Directory -Force -Path .\peer\downloads\incomplete
-    New-Item -ItemType Directory -Force -Path .\peer\watch
+- Docker instalado e funcionando
+- Docker Compose instalado
+- Permissões de sudo (para Linux)
+- Portas 8080-8085 e 51412-51417 disponíveis
 
-    foreach ($leecher in "leecher1","leecher2","leecher3") {
-        New-Item -ItemType Directory -Force -Path ".\$leecher\config"
-        New-Item -ItemType Directory -Force -Path ".\$leecher\downloads\complete"
-        New-Item -ItemType Directory -Force -Path ".\$leecher\downloads\incomplete"
-        New-Item -ItemType Directory -Force -Path ".\$leecher\watch"
-    }
+---
 
-## criacao dos containers:
+## Criar Estrutura de Diretórios
 
-    1. Introdução
-    Breve explicação do que é BitTorrent (rede P2P para compartilhamento de arquivos).
+### No Linux:
 
-    Diferença entre seeder e leecher.
+```bash
+# Criar diretórios para todas as instâncias
+mkdir -p peer{1,2,3,4,5}/{config,downloads,watch}
+mkdir -p seed/{config,downloads,watch}
 
-    Papel do tracker (coordena peers) e do DHT (descoberta distribuída).
+# Definir permissões corretas
+sudo chown -R 1000:1000 peer*
+sudo chown -R 1000:1000 seed
+sudo chmod -R 755 peer*
+sudo chmod -R 755 seed
+```
 
-    2. Configuração inicial
-    Mostrar a estrutura de containers: 1 peer + 3 leechers.
+### No Windows (PowerShell):
 
-    Explicar que o qBittorrent local está atuando como tracker.
+```powershell
+for ($i = 1; $i -le 5; $i++) {
+    New-Item -ItemType Directory -Force -Path ".\peer$i\config"
+    New-Item -ItemType Directory -Force -Path ".\peer$i\downloads"
+    New-Item -ItemType Directory -Force -Path ".\peer$i\watch"
+}
 
-    Destacar que o peer começa com DHT desabilitado.
+New-Item -ItemType Directory -Force -Path ".\seed\config"
+New-Item -ItemType Directory -Force -Path ".\seed\downloads"
+New-Item -ItemType Directory -Force -Path ".\seed\watch"
+```
 
-    3. Criação do torrent
-    Criar o .torrent no qBittorrent com o tracker HTTP:
+---
 
-    4. Fase 1 – Tracker ativo
-    Peer sem DHT consegue baixar porque o tracker informa os seeders.
+## Verificar o Docker Compose
 
-    Leechers começam a baixar e, ao completar, viram seeders também.
+Certifique-se de que o arquivo `docker-compose.yml` está na raiz do projeto com todas as 6 instâncias configuradas:
+- 1 seed (porta 8080)
+- 5 peers (portas 8081-8085)
 
-    Mostrar no monitor/logs os pacotes announce e scrape.
+Todas as instâncias estão configuradas com `network_mode: host` para acesso direto à rede.
 
-    5. Fase 2 – Derrubar o tracker
-    Desativar o tracker no qBittorrent.
+*caso esteja utilizando docker desktop no windows ou mac, altere o network_mode para bridge, devido a limitacoes de implementacao, o docker desktop nao possui acesso para mapear portas dentro do windows, este eh um problema conhecido que pode ser contornado caso utilize docker dentro de uma maquina wsl ao inves do docker desktop
 
-    Peer sem DHT não encontra mais seeders → download para.
+---
 
-    Leechers com DHT ativo continuam trocando pacotes entre si.
+## Iniciar os Containers
 
-    Mostrar no monitor/logs mensagens get_peers e announce_peer.
+### Iniciação básica:
 
-    6. Fase 3 – Peer com DHT ativo
-    Reiniciar o peer com TRANSMISSION_DHT_ENABLED=true.
+```bash
+# Subir todos os containers em background
+docker-compose up -d
 
-    Agora ele participa da rede distribuída e encontra seeders via DHT.
+# Verificar status dos containers
+docker-compose ps
 
-    Mesmo sem tracker, o download continua.
+# Ver logs em tempo real (opcional)
+docker-compose logs -f
+```
 
-    Mostrar no monitor/logs que o peer passa a enviar/receber mensagens DHT.
+---
 
-    7. Conclusão
-    Tracker = ponto central de coordenação, mas dependente.
+## Acessar as Instâncias
 
-    DHT = rede distribuída, resiliente mesmo sem tracker.
+Aguarde 30-60 segundos para que os containers iniciem completamente.
 
-    Demonstração prática da transição de centralizado → distribuído.
+### URLs de Acesso:
 
-    Destacar que leechers viram seeders, aumentando a robustez da rede.
+| Instância | URL | Porta |
+|-----------|-----|-------|
+| Seed | `http://0.0.0.0:8080/` | 8080 |
+| Peer 1 | `http://0.0.0.0:8081/` | 8081 |
+| Peer 2 | `http://0.0.0.0:8082/` | 8082 |
+| Peer 3 | `http://0.0.0.0:8083/` | 8083 |
+| Peer 4 | `http://0.0.0.0:8084/` | 8084 |
+| Peer 5 | `http://0.0.0.0:8085/` | 8085 |
 
-    Use logs separados por container para mostrar o tráfego em tempo real.
+Se estiver acessando de outro equipamento, substitua `0.0.0.0` pelo IP da máquina.
 
-    Mostre a aba “Trackers” no Transmission para evidenciar status “Working” ou “Not Working”.
+---
 
-    Faça pausas entre fases para explicar o que está acontecendo.
+## Autenticação
 
-    Termine reforçando a importância da DHT para a resiliência da rede.
+As credenciais padrão para acesso à Web UI são:
+- **Usuário:** admin
+- **Senha:** (gerada aleatoriamente ao iniciar o container, verifique o log para capturar a senha do painel)
+
+
+---
+## Verificação Final
+
+Para confirmar que tudo está funcionando:
+
+```bash
+# 1. Todos containers rodando
+docker-compose ps
+
+# 2. Portas abertas
+netstat -an | grep LISTEN | grep 808
+netstat -an | grep LISTEN | grep 5141
+
+# 3. Acessar Web UI
+curl http://0.0.0.0:8080
+
+# em windows ou mac como o docker desktop faz o papel de maquina virtual, ele apenas aponta para o localhost,
+# em linux 0.0.0.0 normalmente ira funcionar, enquanto que no widows/mac o recomendado e utilizar localhost.
+
+# 4. Ver logs sem erros
+docker-compose logs | grep -i error
+```

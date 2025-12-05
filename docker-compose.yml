@@ -1,91 +1,120 @@
-version: "3.8"
-
 services:
-  peer:
-    image: linuxserver/transmission
-    container_name: peer
+  seed:
+    image: linuxserver/qbittorrent
+    container_name: qbit_peer
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - TRANSMISSION_DHT_ENABLED=false 
+      - WEBUI_PORT=8080
     volumes:
-      - ./peer/config:/config
-      - ./peer/downloads:/downloads
-      - ./peer/watch:/watch
+      - ./seeder/config:/config
+      - ./seeder/downloads:/downloads
+      - ./seeder/watch:/watch
     ports:
-      - "9091:9091"
-      - "51411:51413/tcp"
-      - "51411:51413/udp"
-    networks:
-      - torrent_net
-
-  leecher1:
-    image: linuxserver/transmission
-    container_name: leecher1
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - TRANSMISSION_DHT_ENABLED=true
-    volumes:
-      - ./leecher1/config:/config
-      - ./leecher1/downloads:/downloads
-      - ./leecher1/watch:/watch
-    ports:
-      - "9092:9091"
+      - "8080:8080"
       - "51412:51413/tcp"
       - "51412:51413/udp"
-    networks:
-      - torrent_net
+    network_mode: host
 
-  leecher2:
-    image: linuxserver/transmission
-    container_name: leecher2
+  peer1:
+    image: linuxserver/qbittorrent
+    container_name: qbit_peer1
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - TRANSMISSION_DHT_ENABLED=true
+      - WEBUI_PORT=8081
     volumes:
-      - ./leecher2/config:/config
-      - ./leecher2/downloads:/downloads
-      - ./leecher2/watch:/watch
+      - ./peer1/config:/config
+      - ./peer1/downloads:/downloads
+      - ./peer1/watch:/watch
     ports:
-      - "9093:9091"
+      - "8081:8081"
       - "51413:51413/tcp"
       - "51413:51413/udp"
     networks:
-      - torrent_net
+      - swarm
 
-  leecher3:
-    image: linuxserver/transmission
-    container_name: leecher3
+
+  peer2:
+    image: linuxserver/qbittorrent
+    container_name: qbit_peer2
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - TRANSMISSION_DHT_ENABLED=true
+      - WEBUI_PORT=8082
     volumes:
-      - ./leecher3/config:/config
-      - ./leecher3/downloads:/downloads
-      - ./leecher3/watch:/watch
+      - ./peer2/config:/config
+      - ./peer2/downloads:/downloads
+      - ./peer2/watch:/watch
     ports:
-      - "9094:9091"
+      - "8082:8082"
       - "51414:51413/tcp"
       - "51414:51413/udp"
     networks:
-      - torrent_net
+      - swarm
 
-  monitor:
-    image: debian:stable-slim
-    container_name: monitor
+
+  peer3:
+    image: linuxserver/qbittorrent
+    container_name: qbit_peer3
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8083
+    volumes:
+      - ./peer3/config:/config
+      - ./peer3/downloads:/downloads
+      - ./peer3/watch:/watch
+    ports:
+      - "8083:8083"
+      - "51415:51413/tcp"
+      - "51415:51413/udp"
     networks:
-      - torrent_net
-    tty: true
-    stdin_open: true
-    command: bash -c "apt-get update && apt-get install -y tcpdump tmux && bash"
+      - swarm
+
+
+  peer4:
+    image: linuxserver/qbittorrent
+    container_name: qbit_peer4
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8084
+    volumes:
+      - ./peer4/config:/config
+      - ./peer4/downloads:/downloads
+      - ./peer4/watch:/watch
+    ports:
+      - "8084:8084"
+      - "51416:51413/tcp"
+      - "51416:51413/udp"
+    networks:
+      - swarm
+
+  peer5:
+    image: linuxserver/qbittorrent
+    container_name: qbit_peer5
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8085
+    volumes:
+      - ./peer5/config:/config
+      - ./peer5/downloads:/downloads
+      - ./peer5/watch:/watch
+    ports:
+      - "8085:8085"
+      - "51417:51413/tcp"
+      - "51417:51413/udp"
+    networks:
+      - swarm
 
 networks:
-  torrent_net:
-    driver: bridge
+  swarm:
+    driver: host
